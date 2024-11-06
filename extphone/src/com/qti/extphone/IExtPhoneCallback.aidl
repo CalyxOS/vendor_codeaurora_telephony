@@ -30,19 +30,21 @@
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
 package com.qti.extphone;
 
 import android.telephony.CellInfo;
+import com.qti.extphone.CiwlanConfig;
 import com.qti.extphone.BearerAllocationStatus;
 import com.qti.extphone.DcParam;
 import com.qti.extphone.DualDataRecommendation;
 import com.qti.extphone.NetworkSelectionMode;
 import com.qti.extphone.NrConfig;
 import com.qti.extphone.NrConfigType;
+import com.qti.extphone.NrIcon;
 import com.qti.extphone.NrIconType;
 import com.qti.extphone.QRadioResponseInfo;
 import com.qti.extphone.QosParametersResult;
@@ -404,4 +406,100 @@ interface IExtPhoneCallback {
      * @param - persoUnlockStatus which can be generally temporary or permanent.
      */
     void onSimPersoUnlockStatusChange(int slotId, in QtiPersoUnlockStatus persoUnlockStatus);
+
+    /**
+     * Indicates that modem capability of Smart Temp DDS Switch has changed.
+     *
+     * Upon receiving this indication, HLOS must inform the modem the user’s preference
+     * for enabling temp DDS switch.
+     *
+     * @param token to match request/response.
+     * @param status SUCCESS/FAILURE based on the modem result code
+     * @param isCapable true/false based on whether the device is capable of performing
+     *        Smart Temp DDS switch
+     */
+    void onDdsSwitchConfigCapabilityChanged(in Token token, in Status status, boolean isCapable);
+
+    /**
+     * Indicates that Temp DDS Switch criteria has changed.
+     *
+     * The boolean contained in this indication determines whether the modem-initiated
+     * Smart Temp DDS Switch is to be used, or the telephony-initiated legacy Temp DDS
+     * Switch logic is to be used. If telephony temp DDS switch logic is disabled, then
+     * telephony must wait for modem recommendations to perform the Temp DDS switch.
+     *
+     * @param telephonyDdsSwitch true/false based on whether telephony temp DDS switch
+     *        logic should be enabled or disabled
+     */
+    void onDdsSwitchConfigCriteriaChanged(boolean telephonyDdsSwitch);
+
+    /**
+     * Indicates the modem's recommendation for the slot on which Temp DDS Switch has to be made.
+     *
+     * @param recommendedSlotId slot ID to which DDS must be switched
+     */
+    void onDdsSwitchConfigRecommendation(int recommendedSlotId);
+
+    /**
+     * Response to IExtPhone.sendUserPreferenceConfigForDataDuringVoiceCall()
+     *
+     * @param token to match request/response.
+     * @param status SUCCESS/FAILURE based on RIL data module response
+     */
+    void onSendUserPreferenceConfigForDataDuringVoiceCall(in Token token, in Status status);
+
+    /**
+     * Response to setCellularRoamingPreference
+     *
+     * @param slotId - slot ID to which this response belongs
+     * @param token - To match request/response. Response must include the same token as in the
+     *        request. Otherwise, the token is set to -1.
+     * @param status - SUCCESS/FAILURE based on the modem result code
+     */
+    void setCellularRoamingPreferenceResponse(int slotId, in Token token, in Status status);
+
+    /**
+     * Indication to know if C_IWLAN RAT is available
+     *
+     * @param slotId - Slot Id
+     * @param ciwlanAvailable - ciwlanAvailable true indicates C_IWLAN RAT is available,
+     *                          false otherwise.
+     */
+    void onCiwlanAvailable(int slotId, in boolean ciwlanAvailable);
+
+    /**
+     * Indication to know the C_IWLAN mode(only vs preferred) for home and roaming
+     *
+     * @param slotId - Slot Id
+     * @param ciwlanConfig - C_IWLAN configuration (only vs preferred) for home and roaming
+     */
+    void onCiwlanConfigChange(int slotId, in CiwlanConfig ciwlanConfig);
+
+    /**
+    * Response to setCiwlanModeUserPreference
+    * @param slotId - Slot Id
+    * @param token - token is the same token which is recived in setCiwlanModeUserPreference
+    * @param status - SUCCESS/FAILURE based on the modem Result code
+    */
+    void setCiwlanModeUserPreferenceResponse(int slotId, in Token token, in Status status);
+
+    /**
+     * Unsol msg to indicate changes to the NR icon
+     *
+     * @param slotId - Slot ID for which this indication is sent
+     * @param icon - NR icon type as per NrIconType.aidl and additional information such as the Rx
+     *               count
+     */
+    void onNrIconChange(int slotId, in NrIcon icon);
+
+    /**
+     * Response to queryNrIcon
+     *
+     * @param slotId - Slot ID for which this response is sent
+     * @param token - This is the same token which is sent from queryNrIcon
+     * @param status - SUCCESS/FAILURE based on the modem result code
+     * @param icon - NR icon type as per NrIconType.aidl and additional information such as the Rx
+     *               count
+     */
+    void onNrIconResponse(int slotId, in Token token, in Status status, in NrIcon icon);
 }

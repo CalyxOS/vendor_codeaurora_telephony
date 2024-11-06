@@ -30,7 +30,7 @@
 /*
  * Changes from Qualcomm Innovation Center are provided under the following license:
  *
- * Copyright (c) 2022-2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) 2022-2024 Qualcomm Innovation Center, Inc. All rights reserved.
  * SPDX-License-Identifier: BSD-3-Clause-Clear
  */
 
@@ -38,6 +38,7 @@ package com.qti.extphone;
 
 import android.telephony.ImsiEncryptionInfo;
 
+import com.qti.extphone.CellularRoamingPreference;
 import com.qti.extphone.CiwlanConfig;
 import com.qti.extphone.Client;
 import com.qti.extphone.IDepersoResCallback;
@@ -219,6 +220,7 @@ interface IExtPhone {
     /**
     * Async api
     * Requires permission: android.Manifest.permission.READ_PRIVILEGED_PHONE_STATE
+    * @deprecated Use {@link #queryNrIcon} instead.
     */
     Token queryNrIconType(int slotId, in Client client);
 
@@ -511,6 +513,8 @@ interface IExtPhone {
 
     /**
      * Request for smart DDS switch capability supported by modem.
+     * Prefer the slot-agnostic variant {@link getDdsSwitchConfigCapability} if the vendor
+     * supports it.
      * @param - slotId slot ID
      * @return - Integer Token can be used to compare with the response.
      */
@@ -520,6 +524,8 @@ interface IExtPhone {
      * Inform modem if user enabled/disabled UI preference for data during voice call.
      * if its enabled then modem can send recommendations to switch DDS during
      * voice call on nonDDS.
+     * Prefer the slot-agnostic variant {@link sendUserPreferenceConfigForDataDuringVoiceCall}
+     * if the vendor supports it.
      * @param - slotId slot ID
      * @param - userPreference true/false based on UI preference
      * @param - client registered with packagename to receive
@@ -625,4 +631,101 @@ interface IExtPhone {
      * @return - persoUnlockStatus which can be generally temporary or permanent.
      */
     QtiPersoUnlockStatus getSimPersoUnlockStatus(int slotId);
+
+    /**
+     * Inform modem whether we allow Temp DDS Switch to the individual slots. This takes
+     * into account factors like the switch state of ‘Data During Calls’ setting, the
+     * current roaming state of the individual subscriptions and their data roaming
+     * enabled state.
+     * If data during calls is allowed, modem can send recommendations to switch
+     * DDS during a voice call on the non-DDS.
+     *
+     * This is a slot-agnostic variant of {@link sendUserPreferenceForDataDuringVoiceCall},
+     * and should be preferred.
+     *
+     * @param isAllowedOnSlot vector containing a boolean per slot that determines whether
+     *        we allow temporary DDS switch to that slot.
+     * @param client Client registered to receive the response callback.
+     * @return Token to be used to compare with the response callback.
+     *
+     * Response function is
+     * IExtPhoneCallback.onSendUserPreferenceConfigForDataDuringVoiceCall().
+     */
+    Token sendUserPreferenceConfigForDataDuringVoiceCall(in boolean[] isAllowedOnSlot,
+            in Client client);
+
+    /**
+     * Request for Smart Temp DDS Switch capability from the modem. This determines the overall
+     * capability of the Smart Temp DDS switch feature.
+     *
+     * This is a slot-agnostic variant of {@link getDdsSwitchCapability}, and should be preferred.
+     *
+     * @param client Client registered to receive the response callback.
+     * @return Token to be used to compare with the response callback.
+     *
+     * Response function is IExtPhoneCallback.onDdsSwitchConfigCapabilityChanged().
+     */
+    Token getDdsSwitchConfigCapability(in Client client);
+
+    /**
+     * Get the cellular roaming preference for the specified slot
+     *
+     * @param slotId - slot ID about which the request is sent
+     * @return - International and domestic cellular roaming preference
+     */
+     CellularRoamingPreference getCellularRoamingPreference(int slotId);
+
+    /**
+     * Set the cellular roaming preference for the specified slot
+     *
+     * @param client - Client registered with package name to receive callbacks.
+     * @param slotId - slot ID for which the request is sent
+     * @param pref - The international and domestic cellular roaming preference
+     * @return - Integer token to compare with the response
+     */
+     Token setCellularRoamingPreference(in Client client, int slotId,
+            in CellularRoamingPreference pref);
+    /**
+     * Request for C_IWLAN availability.
+     *
+     * This API returns true or false based on various conditions like internet PDN is established
+     * on DDS over LTE/NR RATs, CIWLAN is supported in home/roaming etc..
+     * This is different from existing API IExtPhone#isEpdgOverCellularDataSupported() which
+     * returns true if modem supports the CIWLAN feature based on static configuration in modem.
+     *
+     * @param - slotId slot ID
+     * @return - boolean TRUE/FALSE based on C_IWLAN availability.
+     */
+    boolean isCiwlanAvailable(int slotId);
+
+    /**
+     * Set C_IWLAN mode user preference.
+     *
+     * @param slotId - slot ID
+     * @param client - Client registered with package name to receive callbacks.
+     * @param CiwlanConfig - The C_IWLAN mode user preference (only vs preferred)
+     *                       for home and roaming.
+     * @return - Integer Token can be used to compare with the response.
+     */
+    Token setCiwlanModeUserPreference(int slotId, in Client client, in CiwlanConfig ciwlanConfig);
+
+    /**
+     * Get C_IWLAN mode user preference
+     *
+     * This function returns C_IWLAN mode user preference set by the user whereas
+     * IQtiRadio#getCiwlanConfig() returns actual C_IWLAN mode set by the modem.
+     *
+     * @param slotId - slot ID
+     * @return - The C_IWLAN mode user preference (only vs preferred) for home and roaming.
+     */
+    CiwlanConfig getCiwlanModeUserPreference(int slotId);
+
+    /**
+     * Get the NR icon information to be shown on the UI
+     *
+     * @param slotId - Slot ID for which this request is sent
+     * @param client - Client registered with package name to receive callbacks
+     * @return - Integer token to compare with the response
+     */
+    Token queryNrIcon(int slotId, in Client client);
 }
